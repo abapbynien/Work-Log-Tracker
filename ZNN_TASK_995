@@ -1,0 +1,34 @@
+*&---------------------------------------------------------------------*
+*& Report ZNN_TASK_995
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+PROGRAM znn_task_995 MESSAGE-ID ZNN_TASK_995.
+
+* Global declarations
+INCLUDE znn_task_995_top.
+
+* Screen 0100
+INCLUDE znn_task_995_o01.
+INCLUDE znn_task_995_i01.
+
+* Screen 0110
+INCLUDE znn_task_995_o02.
+INCLUDE znn_task_995_i02.
+
+* Screen 0200 (CR Change)
+INCLUDE znn_task_995_o03.
+INCLUDE znn_task_995_i03.
+
+* Screen 0300 (INC Change)
+INCLUDE znn_task_995_o04.
+INCLUDE znn_task_995_i04.
+
+* Screen 0400 (Task Change)
+INCLUDE znn_task_995_o05.
+INCLUDE znn_task_995_i05.
+
+* Forms
+INCLUDE znn_task_995_f01.
+START-OF-SELECTION.
+call screen 0100.
