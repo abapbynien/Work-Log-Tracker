@@ -1,0 +1,9 @@
+*&---------------------------------------------------------------------*
+*& Include          ZNN_TASK_995_O04
+*&---------------------------------------------------------------------*
+MODULE status_0300 OUTPUT.
+SET TITLEBAR 'TITLE_0300'.
+  MOVE-CORRESPONDING gs_inc_sel
+                    TO zinctracker_995.
+
+ENDMODULE.
