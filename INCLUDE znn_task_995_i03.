@@ -1,0 +1,22 @@
+*&---------------------------------------------------------------------*
+*& Include          ZNN_TASK_995_I03
+*&---------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  CASE sy-ucomm.
+
+    WHEN 'SAVE'.
+
+      PERFORM save_data.
+
+    WHEN 'BACK'.
+
+      LEAVE TO SCREEN 0100.
+
+    WHEN 'EXIT'.
+
+      LEAVE PROGRAM.
+
+  ENDCASE.
+
+ENDMODULE.
