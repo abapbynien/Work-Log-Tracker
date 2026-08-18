@@ -1,0 +1,66 @@
+*&---------------------------------------------------------------------*
+*& Include          ZNN_TASK_995_O02
+*&---------------------------------------------------------------------*
+MODULE status_0110 OUTPUT.
+SET TITLEBAR 'TITLE_0110'.
+  DATA ls_layout TYPE lvc_s_layo.
+
+* Row Selection
+  ls_layout-sel_mode = 'A'.
+
+*--------------------------------------------------------------------*
+* Create Container & ALV Grid Only Once
+*--------------------------------------------------------------------*
+  IF go_container IS INITIAL.
+
+    CREATE OBJECT go_container
+      EXPORTING
+        container_name = 'CC_ALV'.
+
+    CREATE OBJECT go_grid
+      EXPORTING
+        i_parent = go_container.
+
+  ENDIF.
+
+*--------------------------------------------------------------------*
+* CR ALV
+*--------------------------------------------------------------------*
+  CASE gv_type.
+
+    WHEN 'CR'.
+
+      CALL METHOD go_grid->set_table_for_first_display
+        EXPORTING
+          i_structure_name = 'ZCRTRACKER_995'
+          is_layout        = ls_layout
+        CHANGING
+          it_outtab        = gt_cr.
+
+*--------------------------------------------------------------------*
+* INC ALV
+*--------------------------------------------------------------------*
+    WHEN 'INC'.
+
+      CALL METHOD go_grid->set_table_for_first_display
+        EXPORTING
+          i_structure_name = 'ZINCTRACKER_995'
+          is_layout        = ls_layout
+        CHANGING
+          it_outtab        = gt_inc.
+
+*--------------------------------------------------------------------*
+* TASK ALV
+*--------------------------------------------------------------------*
+    WHEN 'TASK'.
+
+      CALL METHOD go_grid->set_table_for_first_display
+        EXPORTING
+          i_structure_name = 'ZOTHER_TASK_995'
+          is_layout        = ls_layout
+        CHANGING
+          it_outtab        = gt_task.
+
+  ENDCASE.
+
+ENDMODULE.
