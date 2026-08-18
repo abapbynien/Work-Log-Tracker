@@ -1,0 +1,428 @@
+*&---------------------------------------------------------------------*
+*& Include          ZNN_TASK_995_F01
+*&---------------------------------------------------------------------*
+
+*---------------------------------------------------------------------*
+* Determine Selection From Screen 0100
+*---------------------------------------------------------------------*
+FORM determine_selection.
+
+* T-Code Functionality
+  IF gv_tcode IS NOT INITIAL.
+
+* Validate T-Code Exists
+
+    SELECT SINGLE tcode
+      FROM tstc
+      INTO @DATA(lv_tcode)
+      WHERE tcode = @gv_tcode.
+
+    IF sy-subrc <> 0.
+
+      MESSAGE e000(ZNN_TASK_995).
+
+    ENDIF.
+
+* Pass T-Code to SE93
+
+    SET PARAMETER ID 'TCD'
+      FIELD gv_tcode.
+
+    CALL TRANSACTION 'SE93'.
+
+    RETURN.
+
+*-------------------------------------------------------------------*
+* CR Tracking Selected
+*-------------------------------------------------------------------*
+  ELSEIF zcrtracker_995-cr_no IS NOT INITIAL.
+
+    gv_type = 'CR'.
+
+    PERFORM get_cr_data.
+
+*-------------------------------------------------------------------*
+* INC Tracking Selected
+*-------------------------------------------------------------------*
+  ELSEIF zinctracker_995-inc_no IS NOT INITIAL.
+
+    gv_type = 'INC'.
+
+    PERFORM get_inc_data.
+
+*-------------------------------------------------------------------*
+* Additional Task Selected
+*-------------------------------------------------------------------*
+  ELSEIF zother_task_995-short_desc IS NOT INITIAL.
+
+    gv_type = 'TASK'.
+
+    PERFORM get_task_data.
+
+*-------------------------------------------------------------------*
+* No Selection
+*-------------------------------------------------------------------*
+  ELSE.
+
+    MESSAGE e001(ZNN_TASK_995).
+
+  ENDIF.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Fetch CR Data
+*---------------------------------------------------------------------*
+FORM get_cr_data.
+
+  CLEAR gt_cr.
+
+  SELECT *
+    FROM zcrtracker_995
+    INTO TABLE @gt_cr
+    WHERE cr_no = @zcrtracker_995-cr_no.
+*  MESSAGE |Records Found: { lines gt_cr ) }| TYPE 'I'.
+
+  IF gt_cr IS INITIAL.
+
+    MESSAGE I002(ZNN_TASK_995).
+
+    RETURN.
+
+  ENDIF.
+
+* Open ALV Screen
+  CALL SCREEN 0110.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Fetch INC Data
+*---------------------------------------------------------------------*
+FORM get_inc_data.
+
+  CLEAR gt_inc.
+
+  SELECT *
+    FROM zinctracker_995
+    INTO TABLE @gt_inc
+    WHERE inc_no = @zinctracker_995-inc_no.
+
+  IF gt_inc IS INITIAL.
+
+    MESSAGE I003(ZNN_TASK_995).
+
+    RETURN.
+
+  ENDIF.
+
+* Open ALV Screen
+  CALL SCREEN 0110.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Fetch Additional Task Data
+*---------------------------------------------------------------------*
+FORM get_task_data.
+
+  CLEAR gt_task.
+
+  SELECT *
+    FROM zother_task_995
+    INTO TABLE @gt_task
+    WHERE short_desc = @zother_task_995-short_desc.
+
+  IF gt_task IS INITIAL.
+
+    MESSAGE I004(ZNN_TASK_995).
+
+    RETURN.
+
+  ENDIF.
+
+* Open ALV Screen
+  CALL SCREEN 0110.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Create Record
+*---------------------------------------------------------------------*
+FORM create_record.
+
+  gv_mode = 'CREATE'.
+
+*-------------------------------------------------------------------*
+* Create CR
+*-------------------------------------------------------------------*
+  IF zcrtracker_995-cr_no IS NOT INITIAL.
+
+    gv_type = 'CR'.
+
+    CLEAR zcrtracker_995.
+
+    CALL SCREEN 0200.
+
+*-------------------------------------------------------------------*
+* Create INC
+*-------------------------------------------------------------------*
+  ELSEIF zinctracker_995-inc_no IS NOT INITIAL.
+
+    gv_type = 'INC'.
+
+    CLEAR zinctracker_995.
+
+    CALL SCREEN 0300.
+
+*-------------------------------------------------------------------*
+* Create Task
+*-------------------------------------------------------------------*
+  ELSEIF zother_task_995-short_desc IS NOT INITIAL.
+
+    gv_type = 'TASK'.
+
+    CLEAR zother_task_995.
+
+    CALL SCREEN 0400.
+
+  ELSE.
+
+    MESSAGE e005(ZNN_TASK_995).
+
+  ENDIF.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Load Selected Record For Change
+*---------------------------------------------------------------------*
+FORM fill_change_data.
+
+  gv_mode = 'CHANGE'.
+
+  CASE gv_type.
+
+*-------------------------------------------------------------------*
+* CR Change
+*-------------------------------------------------------------------*
+    WHEN 'CR'.
+
+      SELECT SINGLE *
+        FROM zcrtracker_995
+        INTO @gs_cr_sel
+        WHERE cr_no = @zcrtracker_995-cr_no.
+
+      IF sy-subrc <> 0.
+
+        MESSAGE e006(ZNN_TASK_995).
+
+      ENDIF.
+
+*-------------------------------------------------------------------*
+* INC Change
+*-------------------------------------------------------------------*
+    WHEN 'INC'.
+
+      SELECT SINGLE *
+        FROM zinctracker_995
+        INTO @gs_inc_sel
+        WHERE inc_no = @zinctracker_995-inc_no.
+
+      IF sy-subrc <> 0.
+
+        MESSAGE e007(ZNN_TASK_995).
+      ENDIF.
+
+*-------------------------------------------------------------------*
+* Task Change
+*-------------------------------------------------------------------*
+    WHEN 'TASK'.
+
+      SELECT SINGLE *
+        FROM zother_task_995
+        INTO @gs_task_sel
+        WHERE short_desc = @zother_task_995-short_desc.
+
+      IF sy-subrc <> 0.
+
+        MESSAGE e008(ZNN_TASK_995).
+
+      ENDIF.
+
+  ENDCASE.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Save / Update CR Data
+*---------------------------------------------------------------------*
+FORM save_data.
+
+*-------------------------------------------------------------------*
+* Mandatory Validation
+*-------------------------------------------------------------------*
+  IF zcrtracker_995-jira_id IS INITIAL.
+    MESSAGE e009(ZNN_TASK_995).
+  ENDIF.
+
+  IF zcrtracker_995-cr_no IS INITIAL.
+    MESSAGE e010(ZNN_TASK_995).
+  ENDIF.
+
+*-------------------------------------------------------------------*
+* Create New CR Record
+*-------------------------------------------------------------------*
+  IF gv_mode = 'CREATE'.
+
+    INSERT zcrtracker_995.
+
+*-------------------------------------------------------------------*
+* Update Existing CR Record
+*-------------------------------------------------------------------*
+  ELSE.
+
+    UPDATE zcrtracker_995
+       SET short_desc     = @zcrtracker_995-short_desc,
+           priority       = @zcrtracker_995-priority,
+           status         = @zcrtracker_995-status,
+           ecd            = @zcrtracker_995-ecd,
+           mentor_helping = @zcrtracker_995-mentor_helping,
+           my_query       = @zcrtracker_995-my_query,
+           blocker        = @zcrtracker_995-blocker
+     WHERE jira_id        = @zcrtracker_995-jira_id
+       AND cr_no          = @zcrtracker_995-cr_no.
+
+  ENDIF.
+
+*-------------------------------------------------------------------*
+* Commit
+*-------------------------------------------------------------------*
+  IF sy-subrc = 0.
+
+    COMMIT WORK .
+*    AND WAIT.
+
+    MESSAGE s011(ZNN_TASK_995).
+
+    CLEAR:
+      zcrtracker_995,
+      gv_type,
+      gv_mode.
+
+    LEAVE TO SCREEN 0100.
+
+  ELSE.
+
+    MESSAGE e012(ZNN_TASK_995).
+
+  ENDIF.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Save / Update INC Data
+*---------------------------------------------------------------------*
+FORM save_inc_data.
+
+  IF zinctracker_995-inc_no IS INITIAL.
+
+    MESSAGE e013(ZNN_TASK_995).
+
+  ENDIF.
+
+*-------------------------------------------------------------------*
+* Create
+*-------------------------------------------------------------------*
+  IF gv_mode = 'CREATE'.
+
+    INSERT zinctracker_995.
+
+*-------------------------------------------------------------------*
+* Update
+*-------------------------------------------------------------------*
+  ELSE.
+
+    UPDATE zinctracker_995
+       SET short_desc = @zinctracker_995-short_desc,
+           priority   = @zinctracker_995-priority,
+           status     = @zinctracker_995-status,
+           ecd        = @zinctracker_995-ecd,
+           my_query   = @zinctracker_995-my_query,
+           blocker    = @zinctracker_995-blocker
+     WHERE inc_no     = @zinctracker_995-inc_no.
+
+  ENDIF.
+
+  IF sy-subrc = 0.
+
+    COMMIT WORK.
+*    AND WAIT.
+
+    MESSAGE s014(ZNN_TASK_995).
+
+    CLEAR:
+      zinctracker_995,
+      gv_type,
+      gv_mode.
+
+    LEAVE TO SCREEN 0100.
+
+  ELSE.
+
+    MESSAGE e015(ZNN_TASK_995).
+
+  ENDIF.
+
+ENDFORM.
+
+*---------------------------------------------------------------------*
+* Save / Update Task Data
+*---------------------------------------------------------------------*
+FORM save_task_data.
+
+  IF zother_task_995-short_desc IS INITIAL.
+
+    MESSAGE e016(ZNN_TASK_995).
+
+  ENDIF.
+
+*-------------------------------------------------------------------*
+* Create
+*-------------------------------------------------------------------*
+  IF gv_mode = 'CREATE'.
+
+    INSERT zother_task_995.
+
+*-------------------------------------------------------------------*
+* Update
+*-------------------------------------------------------------------*
+  ELSE.
+
+    UPDATE zother_task_995
+       SET status = @zother_task_995-status
+     WHERE short_desc = @zother_task_995-short_desc.
+
+  ENDIF.
+
+  IF sy-subrc = 0.
+
+    COMMIT WORK.
+*     AND WAIT.
+
+    MESSAGE s017(ZNN_TASK_995).
+
+    CLEAR:
+      zother_task_995,
+      gv_type,
+      gv_mode.
+
+    LEAVE TO SCREEN 0100.
+
+  ELSE.
+
+    MESSAGE e018(ZNN_TASK_995).
+
+  ENDIF.
+
+ENDFORM.
